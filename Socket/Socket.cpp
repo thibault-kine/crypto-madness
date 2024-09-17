@@ -107,7 +107,7 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
   case PacketType::MESSAGE: {
     Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
     std::cout << "\033[2K\r" << std::flush;
-    this->isServer ? std::cout << "Server: " : std::cout << userName << ": ";
+    this->isServer ? std::cout << userName << ": " : std::cout << "Server: " ;
     p.printData();
     return p;
     break;
@@ -135,10 +135,10 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
   if (this->isServer) {
     std::cout << "Received connect packet" << std::endl;
     return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe",
-                  "Server");
+                  userName.c_str());
   }else{
     return Packet(PacketType::MESSAGE, "connexion réussie",
-                  "Server");
+                  userName.c_str());
   }
 }
 
@@ -154,9 +154,9 @@ Packet Socket::password(char *dataBuffer, uint64_t dataSize,
   if (this->isServer) {
     std::cout << "Received password packet" << std::endl;
     if (isPasswordValid(userName, std::string(dataBuffer, dataSize))) {
-      return Packet(PacketType::MESSAGE, "Connexion accepté", "Server");
+      return Packet(PacketType::MESSAGE, "Connexion accepté", userName.c_str());
     } else {
-      return Packet(PacketType::MESSAGE, "Connexion refusé", "Server");
+      return Packet(PacketType::MESSAGE, "Connexion refusé", userName.c_str());
     }
   } else {
     std::string password = this->getPassword();
