@@ -8,6 +8,19 @@ namespace fs = std::filesystem;
 
 Logger *logger = Logger::getInstance();
 
+void Socket::handleUserInput(Packet &p, const std::string &userName) {
+    std::string message;
+    while (this->running) { // running contrôle l'exécution du thread
+        std::cout << "You: ";
+        std::getline(std::cin, message);
+        if (message.empty()) {
+            continue; // Ignorer les messages vides
+        }
+        p.setDataFromStr(message.c_str(), userName.c_str());
+        this->sendPacket(this->getSocketFd(), p); // Envoyer le message
+    }
+}
+
 bool Socket::createSocket() {
   socketFd = socket(AF_INET, SOCK_STREAM, 0);
   if (socketFd == -1) {
@@ -92,17 +105,9 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
   switch (type) {
 
   case PacketType::MESSAGE: {
-    Packet p =
-        Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(),
-               userName.c_str());
-    this->isServer ? std::cout << userName << ": " : std::cout << "Server: ";
+    Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
+    std::cout << userName << ": ";
     p.printData();
-    if(!this->IsServer()){
-      std::string message;
-      std::cout << "You: ";
-      std::getline(std::cin, message);
-      p.setDataFromStr(message.c_str(), userName.c_str());
-    }
     return p;
     break;
   }
@@ -129,6 +134,9 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
   if (this->isServer) {
     std::cout << "Received connect packet" << std::endl;
     return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe",
+                  userName.c_str());
+  }else{
+    return Packet(PacketType::MESSAGE, "connexion réussie",
                   userName.c_str());
   }
 }

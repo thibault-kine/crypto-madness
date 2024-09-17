@@ -7,6 +7,9 @@
 #include <sys/socket.h>
 #include <thread>
 #include <unistd.h>
+#include <mutex>
+#include <vector>
+#include <algorithm>
 
 std::string getServerAddress() {
   struct ifaddrs *ifAddrStruct = NULL;
@@ -46,26 +49,48 @@ std::string getServerAddress() {
   return address;
 }
 
-int handleClient(int clientFd, Socket &server) {
+void broadcastMessage(const Packet &packet, int senderFd, Socket &server, std::vector<int> &clients, std::mutex &clientsMutex) {
+  std::lock_guard<std::mutex> lock(clientsMutex);
+  for (int clientFd : clients) {
+    if (clientFd != senderFd) {
+      server.sendPacket(clientFd, packet);
+    }
+  }
+}
+
+int handleClient(int clientFd, Socket &server, std::vector<int> &clients, std::mutex &clientsMutex) {
   if (clientFd == -1) {
     return 1;
   }
   std::cout << "Client connected" << std::endl;
+
+  {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    clients.push_back(clientFd);
+  }
+  
+  // Connexion
   Packet sent = server.receivePacket(clientFd);
   server.sendPacket(clientFd, sent);
+  // Requete
   sent = server.receivePacket(clientFd);
   server.sendPacket(clientFd, sent);
+
   if (sent.getDataStr() == std::string("Connexion refusé")) {
     return 1;
   }
   while (true) {
-    sent = server.receivePacket(clientFd);
-    server.sendPacket(clientFd, sent);
-    
+    sent = server.receivePacket(clientFd);    
     if (sent.getPacketType() == PacketType::NONE
     ) {
       break;
     }
+    broadcastMessage(sent, clientFd, server, clients, clientsMutex);
+  }
+
+  {
+    std::lock_guard<std::mutex> lock(clientsMutex);
+    clients.erase(std::remove(clients.begin(), clients.end(), clientFd), clients.end());
   }
 
   return 0;
@@ -85,6 +110,8 @@ int startServer(std::string ip, int port) {
   }
   std::cout << "Server started on " << ip << ":" << port << std::endl;
 
+  std::vector<int> clients;
+  std::mutex clientsMutex;
   std::vector<std::thread> clientThreads;
 
   while (true) {
@@ -92,8 +119,7 @@ int startServer(std::string ip, int port) {
     if (clientFd == -1) {
       return 1;
     }
-    clientThreads.emplace_back(
-        std::thread(handleClient, clientFd, std::ref(server)));
+    clientThreads.emplace_back(std::thread(handleClient, clientFd, std::ref(server), std::ref(clients), std::ref(clientsMutex)));
   }
 
   for (std::thread &t : clientThreads) {

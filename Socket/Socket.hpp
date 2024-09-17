@@ -9,12 +9,12 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-
 class Socket {
 private:
   int socketFd;
   struct sockaddr_in address;
   bool isServer = false;
+  bool running = true;
 
   Packet acceptClient(char *dataBuffer, uint64_t dataSize,
                       std::string userName);
@@ -22,7 +22,9 @@ private:
   std::string getPassword();
 
 public:
-  Socket() : socketFd(0) { memset(&address, 0, sizeof(address)); }
+  // Constructeur par défaut
+  Socket() : socketFd(0), running(true) { memset(&address, 0, sizeof(address)); }
+  
   ~Socket() { closeSocket(); }
 
   bool createSocket();
@@ -38,13 +40,13 @@ public:
   Packet connectSocket(char *dataBuffer, uint64_t dataSize,
                        std::string userName);
 
-  int getSocketFd() { return socketFd; };
-  struct sockaddr_in getAddress() {
-    return address;
-  };
+  int getSocketFd() { return socketFd; }
+  struct sockaddr_in getAddress() { return address; }
   bool IsServer() { return isServer; }
 
-  void setSocketFd(int socketFd) { this->socketFd = socketFd; };
-  void setAddress(struct sockaddr_in address) { this->address = address; };
+  void handleUserInput(Packet &p, const std::string &userName);
+
+  void setSocketFd(int socketFd) { this->socketFd = socketFd; }
+  void setAddress(struct sockaddr_in address) { this->address = address; }
   void setIsServer(bool value) { this->isServer = value; }
 };
