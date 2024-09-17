@@ -91,8 +91,12 @@ int startClient(const std::string &ip, int port, Packet &p) {
     if (sent.getPacketType() == PacketType::NONE) {
       client.closeSocket();
       break;
+    }else if(sent.getPacketType() == PacketType::ERROR){
+      std::cerr << "Error: " << std::endl;
+      break;  
     }
-    }
+  }
+  client.sendPacket(client.getSocketFd(), Packet(PacketType::NONE, "", username.c_str()));
   return 0;
 }
 

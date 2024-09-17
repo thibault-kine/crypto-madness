@@ -9,7 +9,8 @@ enum PacketType : uint8_t {
   NONE,
   MESSAGE,
   PASSWORD,
-  CONNECT
+  CONNECT,
+  ERROR
 };
 
 class Packet {

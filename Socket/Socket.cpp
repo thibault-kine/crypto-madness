@@ -106,8 +106,10 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
 
   case PacketType::MESSAGE: {
     Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
-    std::cout << userName << ": ";
+    std::cout << "\033[2K\r" << std::flush;
+    this->isServer ? std::cout << "Server: " : std::cout << userName << ": ";
     p.printData();
+    std::cout << previousOutput << std::flush;
     return p;
     break;
   }
@@ -134,10 +136,10 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
   if (this->isServer) {
     std::cout << "Received connect packet" << std::endl;
     return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe",
-                  userName.c_str());
+                  "Server");
   }else{
     return Packet(PacketType::MESSAGE, "connexion réussie",
-                  userName.c_str());
+                  "Server");
   }
 }
 
@@ -153,9 +155,9 @@ Packet Socket::password(char *dataBuffer, uint64_t dataSize,
   if (this->isServer) {
     std::cout << "Received password packet" << std::endl;
     if (isPasswordValid(userName, std::string(dataBuffer, dataSize))) {
-      return Packet(PacketType::MESSAGE, "Connexion accepté", userName.c_str());
+      return Packet(PacketType::MESSAGE, "Connexion accepté", "Server");
     } else {
-      return Packet(PacketType::MESSAGE, "Connexion refusé", userName.c_str());
+      return Packet(PacketType::MESSAGE, "Connexion refusé", "Server");
     }
   } else {
     std::string password = this->getPassword();
@@ -176,7 +178,7 @@ Packet Socket::receivePacket(int clientFd) {
     if (bytesReceived <= 0) {
       perror("recv failed while receiving packet header");
       logger->errLog("Connection closed while receiving packet header");
-      return Packet(PacketType::MESSAGE, "", "");
+      return Packet(PacketType::ERROR, "", "");
     }
     totalReceived += bytesReceived;
   }

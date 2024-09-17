@@ -84,6 +84,9 @@ int handleClient(int clientFd, Socket &server, std::vector<int> &clients, std::m
     if (sent.getPacketType() == PacketType::NONE
     ) {
       break;
+    }else if(sent.getPacketType() == PacketType::ERROR){
+      std::cout << "Error: " << perror << std::endl;
+      break;
     }
     broadcastMessage(sent, clientFd, server, clients, clientsMutex);
   }
