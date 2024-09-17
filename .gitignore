@@ -1,3 +1,5 @@
+.vscode
+
 # Prerequisites
 *.d
 
@@ -30,3 +32,11 @@
 *.exe
 *.out
 *.app
+
+lpf
+lpf_server
+/Storage
+/Downloads
+Server/very_safe_trust_me_bro.txt
+.log
+1G.bin
