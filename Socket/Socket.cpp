@@ -109,7 +109,6 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     std::cout << "\033[2K\r" << std::flush;
     this->isServer ? std::cout << "Server: " : std::cout << userName << ": ";
     p.printData();
-    std::cout << previousOutput << std::flush;
     return p;
     break;
   }
