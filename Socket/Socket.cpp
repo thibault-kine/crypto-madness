@@ -1,5 +1,6 @@
 #include "Socket.hpp"
 #include "../Utils/Logger.hpp"
+#include "../Utils/MD5.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -108,8 +109,11 @@ bool Socket::closeSocket() {
 
 bool Socket::sendPacket(int clientFd, Packet message) {
   std::vector<uint8_t> packet = message.toBytes();
-  std::cout << "\033[2K\r" << std::flush;
-  std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
+  if(message.getPacketType() == PacketType::MESSAGE)
+  {
+    std::cout << "\033[2K\r" << std::flush;
+    std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
+  }
   int packetSize = packet.size(); // Size includes header size
   ssize_t totalSent = 0;
   while (totalSent < packetSize) {
@@ -194,7 +198,14 @@ std::string Socket::getPassword() {
     std::cout << "- Au moins un caractère spécial (ex: #@$!%*?&)\n\n";
     return (getPassword());
   }
-  return password;
+  std::cout << "Confirm password: ";
+  std::string passwordVerif;
+  std::getline(std::cin, passwordVerif);
+  if (password.compare(passwordVerif) != 0) {
+    std::cout << "Passwords don't match" << std::endl;
+    return (getPassword());
+  }
+  return md5(password);
 }
 
 Packet Socket::password(char *dataBuffer, uint64_t dataSize,

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <string.h>
+#include <stdio.h>
 
 namespace fs = std::filesystem;
 
@@ -23,11 +24,11 @@ std::vector<std::string> split(std::string &s, const std::string &delimiter) {
 
 void addUser(std::string username, std::string password) {
   std::ofstream file;
-  if(!fs::exists("Server/very_safe_trust_me_bro.txt")) {
-    std::ofstream file("Server/very_safe_trust_me_bro.txt");
+  if(!fs::exists("Server/actually_safe_this_time.txt")) {
+    std::ofstream file("Server/actually_safe_this_time.txt");
     file.close();
   }
-  file.open("Server/very_safe_trust_me_bro.txt", std::ios_base::app);
+  file.open("Server/actually_safe_this_time.txt", std::ios_base::app);
   if (!file.is_open()) {
     std::cout << "Could not open file" << std::endl;
     exit(1);
@@ -41,11 +42,11 @@ void addUser(std::string username, std::string password) {
 
 bool isPasswordValid(std::string username, std::string password) {
   std::ifstream file;
-  if(!fs::exists("Server/very_safe_trust_me_bro.txt")) {
-    std::ofstream file("Server/very_safe_trust_me_bro.txt");
+  if(!fs::exists("Server/actually_safe_this_time.txt")) {
+    std::ofstream file("Server/actually_safe_this_time.txt");
     file.close();
   }
-  file.open("Server/very_safe_trust_me_bro.txt");
+  file.open("Server/actually_safe_this_time.txt");
   if (!file.is_open()) {
     std::cout << "Could not open file" << std::endl;
     exit(1);
@@ -72,6 +73,7 @@ bool isPasswordValid(std::string username, std::string password) {
 
   file.close();
   addUser(username, password);
+
   return true;
 }
 
