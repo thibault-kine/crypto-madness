@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <unistd.h>
 #include <termios.h>
+#include <regex>
 
 namespace fs = std::filesystem;
 
@@ -184,6 +185,15 @@ std::string Socket::getPassword() {
   std::string password;
   std::cout << "Enter Password: ";
   std::getline(std::cin, password);
+  std::regex password_regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@$!%*?&])[A-Za-z\\d#@$!%*?&]{8,}$");
+  if (!std::regex_match(password, password_regex)) {
+    std::cout << "Le mot de passe ne respecte pas les critères de sécurité :\n";
+    std::cout << "- 8 caractères minimum\n";
+    std::cout << "- Au moins une lettre majuscule\n";
+    std::cout << "- Au moins un chiffre\n";
+    std::cout << "- Au moins un caractère spécial (ex: #@$!%*?&)\n\n";
+    return (getPassword());
+  }
   return password;
 }
 
