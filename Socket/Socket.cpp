@@ -76,6 +76,8 @@ bool Socket::closeSocket() {
 
 bool Socket::sendPacket(int clientFd, Packet message) {
   std::vector<uint8_t> packet = message.toBytes();
+  std::cout << "\033[2K\r" << std::flush;
+  std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
   int packetSize = packet.size(); // Size includes header size
   ssize_t totalSent = 0;
   while (totalSent < packetSize) {
@@ -111,9 +113,9 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
   case PacketType::MESSAGE: {
     Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
     std::cout << "\033[2K\r" << std::flush;
-    std::cout << userName << ": ";
+    std::cout << getCurrentTimeHM() << " - " << userName << ": ";
     p.printData();
-    std::cout << "You: "<< this->message << std::flush;
+    std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
     return p;
     break;
   }
