@@ -79,6 +79,7 @@ void Packet::setDataFromStr(const char *str, const char *user) {
 void Packet::printData() {
   std::string dataStr(this->data.begin(), this->data.end());
   std::cout << dataStr.c_str() << std::endl;
+  std::cout.flush();
 }
 
 std::string Packet::getDataStr() {

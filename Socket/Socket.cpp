@@ -3,23 +3,54 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <unistd.h>
+#include <termios.h>
 
 namespace fs = std::filesystem;
 
 Logger *logger = Logger::getInstance();
 
+void enableRawMode() {
+    struct termios term;
+    tcgetattr(STDIN_FILENO, &term); // Obtenir les attributs actuels du terminal
+    term.c_lflag &= ~(ICANON | ECHO); // Désactiver l'entrée canonique et l'écho
+    tcsetattr(STDIN_FILENO, TCSANOW, &term); // Appliquer les changements
+}
+
+void disableRawMode() {
+    struct termios term;
+    tcgetattr(STDIN_FILENO, &term);
+    term.c_lflag |= (ICANON | ECHO); // Réactiver l'entrée canonique et l'écho
+    tcsetattr(STDIN_FILENO, TCSANOW, &term);
+}
+
 void Socket::handleUserInput(Packet &p, const std::string &userName) {
   char c;
   while (this->running) { // running contrôle l'exécution du thread
-      std::cout << "\033[2K\r" << std::flush;
-      this->message.clear();
-      std::cout << "You: ";
-      while(std::cin.get(c) && c != '\n') {
-          this->message += c;
+      message = "";
+      std::cout << "\033[2K\r";
+      std::cout << "You: "<< std::flush;
+      enableRawMode();
+      while (true) {
+      c = getchar();  // Lire un caractère
+        if (c == '\n') {  // Si 'Enter' est appuyé, on arrête
+            break;
+        } else if (c == 127) {  // Gérer la touche "backspace" (ASCII 127)
+            if (!message.empty()) {
+                message.pop_back();  // Retirer le dernier caractère
+                std::cout << "\b \b";  // Effacer le caractère du terminal
+            }
+        } else {
+            message += c;  // Ajouter le caractère à la chaîne
+            std::cout << c;
+        }
       }
+        disableRawMode();  // Rétablir le mode normal
       if (message.empty()) {
           continue; // Ignorer les messages vides
       }
+      std::cout << "\033[A\033[2K\r";
+      std::cout<< getCurrentTime() << " - You: "<< message << std::endl << std::flush;
       p.setDataFromStr(message.c_str(), userName.c_str());
       this->sendPacket(this->getSocketFd(), p); // Envoyer le message
   }
@@ -110,10 +141,11 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
 
   case PacketType::MESSAGE: {
     Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
-    std::cout << "\033[2K\r" << std::flush;
+    std::cout << "\033[2K\r";
+    std::cout.flush();
     std::cout << userName << ": ";
     p.printData();
-    std::cout << "You: "<< this->message << std::flush;
+    std::cout<< "You: " << message << std::flush;
     return p;
     break;
   }
