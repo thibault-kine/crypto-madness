@@ -34,7 +34,7 @@ void Logger::log(bool isServer, Packet packet) {
   std::lock_guard<std::mutex> lock(mutex);
   std::string message;
 
-  message += getCurrentTime();
+  message += getCurrentTimeHMS();
   if (isServer) {
     message += " [SERVER] ";
   } else {
@@ -55,7 +55,7 @@ void Logger::errLog(std::string message) {
   std::lock_guard<std::mutex> lock(mutex);
   std::string msg;
 
-  msg += getCurrentTime() + " [ERROR!] " + message;
+  msg += getCurrentTimeHMS() + " [ERROR!] " + message;
 
   if (file.is_open()) {
     file << msg << "\n";

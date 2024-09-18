@@ -28,4 +28,6 @@ inline void rtrim(std::string &s);
 
 inline std::string trim(std::string &s);
 
-std::string getCurrentTime();
+std::string getCurrentTimeHMS();
+
+std::string getCurrentTimeHM();
