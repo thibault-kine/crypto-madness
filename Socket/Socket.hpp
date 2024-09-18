@@ -15,6 +15,7 @@ private:
   struct sockaddr_in address;
   bool isServer = false;
   bool running = true;
+  std::string message;
 
   Packet acceptClient(char *dataBuffer, uint64_t dataSize,
                       std::string userName);
@@ -41,6 +42,7 @@ public:
                        std::string userName);
 
   int getSocketFd() { return socketFd; }
+  std::string getMessage() { return message; }
   struct sockaddr_in getAddress() { return address; }
   bool IsServer() { return isServer; }
 

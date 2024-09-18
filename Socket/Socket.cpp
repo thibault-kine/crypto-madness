@@ -9,16 +9,20 @@ namespace fs = std::filesystem;
 Logger *logger = Logger::getInstance();
 
 void Socket::handleUserInput(Packet &p, const std::string &userName) {
-    std::string message;
-    while (this->running) { // running contrôle l'exécution du thread
-        std::cout << "You: ";
-        std::getline(std::cin, message);
-        if (message.empty()) {
-            continue; // Ignorer les messages vides
-        }
-        p.setDataFromStr(message.c_str(), userName.c_str());
-        this->sendPacket(this->getSocketFd(), p); // Envoyer le message
-    }
+  char c;
+  while (this->running) { // running contrôle l'exécution du thread
+      std::cout << "\033[2K\r" << std::flush;
+      this->message.clear();
+      std::cout << "You: ";
+      while(std::cin.get(c) && c != '\n') {
+          this->message += c;
+      }
+      if (message.empty()) {
+          continue; // Ignorer les messages vides
+      }
+      p.setDataFromStr(message.c_str(), userName.c_str());
+      this->sendPacket(this->getSocketFd(), p); // Envoyer le message
+  }
 }
 
 bool Socket::createSocket() {
@@ -107,8 +111,9 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
   case PacketType::MESSAGE: {
     Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
     std::cout << "\033[2K\r" << std::flush;
-    this->isServer ? std::cout << userName << ": " : std::cout << "Server: " ;
+    std::cout << userName << ": ";
     p.printData();
+    std::cout << "You: "<< this->message << std::flush;
     return p;
     break;
   }
