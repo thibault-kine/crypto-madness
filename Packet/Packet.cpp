@@ -100,6 +100,12 @@ std::string Packet::packetTypeToString(PacketType pt) {
     return "MESSAGE";
   case PacketType::PASSWORD:
     return "PASSWORD";
+  case PacketType::LOGIN:
+    return "LOGIN";
+  case PacketType::REGISTER:
+    return "REGISTER";
+  case PacketType::ERROR:
+    return "ERROR";
   default:
     break;
   }

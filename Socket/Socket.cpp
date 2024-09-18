@@ -1,10 +1,12 @@
 #include "Socket.hpp"
 #include "../Utils/Logger.hpp"
+#include "../Utils/MD5.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
 #include <unistd.h>
 #include <termios.h>
+#include <regex>
 
 namespace fs = std::filesystem;
 
@@ -45,7 +47,7 @@ void Socket::handleUserInput(Packet &p, const std::string &userName) {
             std::cout << c;
         }
       }
-        disableRawMode();  // Rétablir le mode normal
+      disableRawMode();  // Rétablir le mode normal
       if (message.empty()) {
           continue; // Ignorer les messages vides
       }
@@ -107,8 +109,11 @@ bool Socket::closeSocket() {
 
 bool Socket::sendPacket(int clientFd, Packet message) {
   std::vector<uint8_t> packet = message.toBytes();
-  std::cout << "\033[2K\r" << std::flush;
-  std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
+  if(message.getPacketType() == PacketType::MESSAGE)
+  {
+    std::cout << "\033[2K\r" << std::flush;
+    std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
+  }
   int packetSize = packet.size(); // Size includes header size
   ssize_t totalSent = 0;
   while (totalSent < packetSize) {
@@ -136,6 +141,11 @@ uint64_t fromBigEndian(const std::vector<uint8_t> bytes, size_t offset,
   return value;
 }
 
+Packet Socket::registerUser(char *dataBuffer, uint64_t dataSize,
+                            std::string userName) {
+  return Packet(PacketType::PASSWORD, this->getPassword(1).c_str(), userName.c_str());
+}
+
 Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
                             std::string userName, PacketType type) {
 
@@ -161,6 +171,11 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     break;
   }
 
+  case PacketType::REGISTER: {
+    return this->registerUser(dataBuffer, dataSize, userName);
+    break;
+  }
+
   default:
     return Packet(PacketType::MESSAGE, "", "");
     break;
@@ -172,19 +187,45 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
                             std::string userName) {
   if (this->isServer) {
     std::cout << "Received connect packet" << std::endl;
-    return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe",
-                  userName.c_str());
+    if (isUserExisting(userName)) {
+      return Packet(PacketType::PASSWORD, "Utilisateur déjà existant", userName.c_str());
+    } else {
+      return Packet(PacketType::REGISTER, "", userName.c_str());
+    }
   }else{
     return Packet(PacketType::MESSAGE, "connexion réussie",
                   userName.c_str());
   }
 }
 
-std::string Socket::getPassword() {
+/**
+ * mode:
+ * 0 = LOGIN
+ * 1 = REGISTER
+ */
+std::string Socket::getPassword(int mode) {
   std::string password;
   std::cout << "Enter Password: ";
   std::getline(std::cin, password);
-  return password;
+  std::regex password_regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@$!%*?&])[A-Za-z\\d#@$!%*?&]{8,}$");
+  if (!std::regex_match(password, password_regex)) {
+    std::cout << "Le mot de passe ne respecte pas les critères de sécurité :\n";
+    std::cout << "- 8 caractères minimum\n";
+    std::cout << "- Au moins une lettre majuscule\n";
+    std::cout << "- Au moins un chiffre\n";
+    std::cout << "- Au moins un caractère spécial (ex: #@$!%*?&)\n\n";
+    return (getPassword(mode));
+  }
+  if (mode == 1) {
+    std::cout << "Confirm password: ";
+    std::string passwordVerif;
+    std::getline(std::cin, passwordVerif);
+    if (password.compare(passwordVerif) != 0) {
+      std::cout << "Passwords don't match" << std::endl;
+      return (getPassword(mode));
+    }
+  }
+  return md5(password);
 }
 
 Packet Socket::password(char *dataBuffer, uint64_t dataSize,
@@ -197,7 +238,7 @@ Packet Socket::password(char *dataBuffer, uint64_t dataSize,
       return Packet(PacketType::MESSAGE, "Connexion refusé", userName.c_str());
     }
   } else {
-    std::string password = this->getPassword();
+    std::string password = this->getPassword(0);
     return Packet(PacketType::PASSWORD, password.c_str(), userName.c_str());
   }
 }

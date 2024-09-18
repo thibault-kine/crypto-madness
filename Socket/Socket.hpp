@@ -19,8 +19,9 @@ private:
 
   Packet acceptClient(char *dataBuffer, uint64_t dataSize,
                       std::string userName);
+  Packet registerUser(char *dataBuffer, uint64_t dataSize, std::string userName);
   Packet password(char *dataBuffer, uint64_t dataSize, std::string userName);
-  std::string getPassword();
+  std::string getPassword(int mode);
 
 public:
   // Constructeur par défaut
@@ -38,8 +39,7 @@ public:
   bool sendPacket(int clientFd, Packet message);
   Packet receivePacket(int fd);
   Packet managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type);
-  Packet connectSocket(char *dataBuffer, uint64_t dataSize,
-                       std::string userName);
+  Packet connectSocket(char *dataBuffer, uint64_t dataSize, std::string userName);
 
   int getSocketFd() { return socketFd; }
   std::string getMessage() { return message; }

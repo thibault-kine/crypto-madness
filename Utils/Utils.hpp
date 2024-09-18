@@ -18,6 +18,8 @@ std::vector<std::string> split(std::string &s, const std::string &delimiter);
 
 void addUser(std::string username);
 
+bool isUserExisting(std::string username);
+
 bool isPasswordValid(std::string username, std::string password);
 
 // trim from start (in place)
