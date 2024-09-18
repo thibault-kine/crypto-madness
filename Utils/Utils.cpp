@@ -40,6 +40,41 @@ void addUser(std::string username, std::string password) {
   file.close();
 }
 
+
+bool isUserExisting(std::string username) {
+  std::ifstream file;
+  if(!fs::exists("Server/actually_safe_this_time.txt")) {
+    std::ofstream file("Server/actually_safe_this_time.txt");
+    file.close();
+  }
+  file.open("Server/actually_safe_this_time.txt");
+  if (!file.is_open()) {
+    std::cout << "Could not open file" << std::endl;
+    exit(1);
+  }
+  std::string line;
+  std::vector<std::string> loginInfo;
+  while (std::getline(file, line)) {
+    loginInfo = split(line, ":");
+
+    trim(loginInfo[0]);
+    trim(loginInfo[1]);
+
+    // Si on trouve l'username ET le password sur la même ligne
+    if (loginInfo[0] == trim(username)) {
+      file.close();
+      return true;
+      loginInfo.clear();
+    }
+
+    loginInfo.clear();
+  }
+
+  file.close();
+
+  return false;
+}
+
 bool isPasswordValid(std::string username, std::string password) {
   std::ifstream file;
   if(!fs::exists("Server/actually_safe_this_time.txt")) {
