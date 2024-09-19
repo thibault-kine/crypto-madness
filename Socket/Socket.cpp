@@ -1,6 +1,6 @@
 #include "Socket.hpp"
 #include "../Utils/Logger.hpp"
-#include "../Utils/MD5.hpp"
+#include "../Utils/SHA.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -225,7 +225,7 @@ std::string Socket::getPassword(int mode) {
       return (getPassword(mode));
     }
   }
-  return md5(password);
+  return sha256(password);
 }
 
 Packet Socket::password(char *dataBuffer, uint64_t dataSize,
