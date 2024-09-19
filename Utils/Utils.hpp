@@ -33,3 +33,5 @@ inline std::string trim(std::string &s);
 std::string getCurrentTimeHMS();
 
 std::string getCurrentTimeHM();
+
+std::string generateRandomString(int length);

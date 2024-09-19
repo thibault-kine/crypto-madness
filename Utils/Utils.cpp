@@ -152,3 +152,18 @@ std::string getCurrentTimeHM() {
 
   return oss.str();
 }
+
+std::string generateRandomString(int length) {
+    char alphanum[] = 
+        "0123456789"
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        "abcdefghijklmnopqrstuvwxyz";
+    std::string temp_s;
+    temp_s.reserve(length);
+
+    for(int i = 0; i < length; i++) {
+        temp_s += alphanum[rand() % (sizeof(alphanum) - 1)];
+    }
+
+    return temp_s;
+}

@@ -9,8 +9,8 @@ CC = g++
 CFLAGS = -g3 -Wall -Wextra -Werror 
 
 # Fichiers source
-SRC_SERVER = Server/main.cpp Packet/Packet.cpp Socket/Socket.cpp Utils/Utils.cpp Utils/Logger.cpp Utils/MD5.cpp
-SRC_CLIENT = Client/main.cpp Packet/Packet.cpp Socket/Socket.cpp Utils/Utils.cpp Utils/Logger.cpp Utils/MD5.cpp
+SRC_SERVER = Server/main.cpp Packet/Packet.cpp Socket/Socket.cpp Utils/Utils.cpp Utils/Logger.cpp Utils/MD5.cpp Utils/SHA.cpp
+SRC_CLIENT = Client/main.cpp Packet/Packet.cpp Socket/Socket.cpp Utils/Utils.cpp Utils/Logger.cpp Utils/MD5.cpp Utils/SHA.cpp
 
 # Fichiers objets
 OBJ_SERVER = $(SRC_SERVER:.cpp=.o)
@@ -21,10 +21,10 @@ OBJ_CLIENT = $(SRC_CLIENT:.cpp=.o)
 all: $(NAME_SERVER) $(NAME_CLIENT)
 
 $(NAME_SERVER): $(OBJ_SERVER)
-	$(CC) $(CFLAGS) -o ./$(NAME_SERVER) $(OBJ_SERVER)
+	$(CC) $(CFLAGS) -o ./$(NAME_SERVER) $(OBJ_SERVER) -lcrypto
 
 $(NAME_CLIENT): $(OBJ_CLIENT)
-	$(CC) $(CFLAGS) -o ./$(NAME_CLIENT) $(OBJ_CLIENT)
+	$(CC) $(CFLAGS) -o ./$(NAME_CLIENT) $(OBJ_CLIENT) -lcrypto
 
 clean:
 	rm -f $(OBJ_SERVER) $(OBJ_CLIENT)
