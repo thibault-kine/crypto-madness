@@ -225,7 +225,10 @@ std::string Socket::getPassword(int mode) {
       return (getPassword(mode));
     }
   }
-  return sha256(password);
+
+  std::string saltedPassword = generateRandomString(12).append(password);
+
+  return sha256(saltedPassword);
 }
 
 Packet Socket::password(char *dataBuffer, uint64_t dataSize,
