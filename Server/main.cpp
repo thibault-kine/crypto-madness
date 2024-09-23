@@ -61,9 +61,10 @@ void broadcastMessage(const Packet &packet, int senderFd, Socket &server, std::v
   }
 }
 
-void generateMaskFile(std::string username) {
+char *generateMaskFile(std::string username) {
   std::string filename = "Server/masks/mask_" + username + ".bin";
   std::remove(filename.c_str());
+  char *mask = new char[1000000];
 
   // Ouvrir le fichier en mode binaire
   std::ofstream file(filename, std::ios::binary);
@@ -79,9 +80,11 @@ void generateMaskFile(std::string username) {
   for (int i = 0; i < 1000000; i++) {
     uint8_t byte = dis(gen);  // Générer un octet aléatoire (8 bits)
     file.write(reinterpret_cast<char*>(&byte), sizeof(byte));  // Écrire l'octet dans le fichier
+    mask[i] = byte;
   }
 
   file.close();
+  return mask;
 }
 
 int handleClient(int clientFd, Socket &server, std::vector<int> &clients, std::mutex &clientsMutex) {
@@ -105,7 +108,10 @@ int handleClient(int clientFd, Socket &server, std::vector<int> &clients, std::m
   if (sent.getDataStr() == std::string("Connexion refusé")) {
     return 1;
   }
-  generateMaskFile(sent.getUserNameStr());
+  Packet mask= Packet(MASK, generateMaskFile(sent.getUserNameStr()), sent.getUserNameStr().c_str());
+  // envoie mask
+  sent = server.receivePacket(clientFd);
+  server.sendPacket(clientFd, mask);
   
   while (true) {
     sent = server.receivePacket(clientFd);    

@@ -136,7 +136,7 @@ uint64_t fromBigEndian(const std::vector<uint8_t> bytes, size_t offset,
   return value;
 }
 
-Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type, std::string filename) {
+Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type) {
 
   switch (type) {
 
@@ -160,8 +160,8 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string use
     break;
   }
 
-  case PacketType::UPLOAD: {
-    return this->upload(dataBuffer, dataSize, userName, filename);
+  case PacketType::MASK: {
+    return this->maskData(dataBuffer, dataSize, userName);
     break;
   }
 
@@ -306,21 +306,20 @@ bool Socket::connectSocket(const char *ip, int port) {
   return true;
 }
 
-Packet Socket::upload(char *dataBuffer, uint64_t dataSize, std::string userName, std::string filename) {
-  createFileFromPacket(dataBuffer, filename, dataSize, userName);
+Packet Socket::maskData(char *dataBuffer, uint64_t dataSize, std::string userName) {
+  createFileFromPacket(dataBuffer, dataSize, userName);
   return Packet(PacketType::MESSAGE, "File uploaded successfully", userName.c_str());
 }
 
-void Socket::createFileFromPacket(char *data, std::string filename, ssize_t dataSize, std::string userName) {
+void Socket::createFileFromPacket(char *data, ssize_t dataSize, std::string userName) {
   std::string storagePath = "";
   if (this->isServer) {
     storagePath.append("Storage/")
         .append(userName)
         .append("/")
-        .append(filename);
+        .append("mask_data.bin");
   } else {
-    filename = filename.substr(filename.find_last_of("/") + 1);
-    storagePath.append("Downloads/").append(filename);
+    storagePath.append(userName).append("_mask_data.bin");
   }
   std::ofstream newFile;
   newFile.open(storagePath.c_str(), std::ios_base::binary);
