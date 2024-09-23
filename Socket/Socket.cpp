@@ -136,8 +136,7 @@ uint64_t fromBigEndian(const std::vector<uint8_t> bytes, size_t offset,
   return value;
 }
 
-Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
-                            std::string userName, PacketType type) {
+Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type, std::string filename) {
 
   switch (type) {
 
@@ -161,10 +160,16 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     break;
   }
 
+  case PacketType::UPLOAD: {
+    return this->upload(dataBuffer, dataSize, userName, filename);
+    break;
+  }
+
   default:
     return Packet(PacketType::MESSAGE, "", "");
     break;
   }
+  
   return Packet(PacketType::MESSAGE, "FAILED", userName.c_str());
 }
 
@@ -172,11 +177,9 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
                             std::string userName) {
   if (this->isServer) {
     std::cout << "Received connect packet" << std::endl;
-    return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe",
-                  userName.c_str());
+    return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe", userName.c_str());
   }else{
-    return Packet(PacketType::MESSAGE, "connexion réussie",
-                  userName.c_str());
+    return Packet(PacketType::MESSAGE, "connexion réussie", userName.c_str());
   }
 }
 
@@ -187,8 +190,7 @@ std::string Socket::getPassword() {
   return password;
 }
 
-Packet Socket::password(char *dataBuffer, uint64_t dataSize,
-                        std::string userName) {
+Packet Socket::password(char *dataBuffer, uint64_t dataSize, std::string userName) {
   if (this->isServer) {
     std::cout << "Received password packet" << std::endl;
     if (isPasswordValid(userName, std::string(dataBuffer, dataSize))) {
@@ -285,8 +287,7 @@ Packet Socket::receivePacket(int clientFd) {
   }
 
   std::string userString(userNameBuffer, userNameSize);
-  Packet p = managePacket(dataBuffer, dataSize, userString,
-                          static_cast<PacketType>(packetHeader.type));
+  Packet p = managePacket(dataBuffer, dataSize, userString, static_cast<PacketType>(packetHeader.type));
   free(userNameBuffer);
   free(dataBuffer);
 
@@ -303,4 +304,29 @@ bool Socket::connectSocket(const char *ip, int port) {
     return false;
   }
   return true;
+}
+
+Packet Socket::upload(char *dataBuffer, uint64_t dataSize, std::string userName, std::string filename) {
+  createFileFromPacket(dataBuffer, filename, dataSize, userName);
+  return Packet(PacketType::MESSAGE, "File uploaded successfully", userName.c_str());
+}
+
+void Socket::createFileFromPacket(char *data, std::string filename, ssize_t dataSize, std::string userName) {
+  std::string storagePath = "";
+  if (this->isServer) {
+    storagePath.append("Storage/")
+        .append(userName)
+        .append("/")
+        .append(filename);
+  } else {
+    filename = filename.substr(filename.find_last_of("/") + 1);
+    storagePath.append("Downloads/").append(filename);
+  }
+  std::ofstream newFile;
+  newFile.open(storagePath.c_str(), std::ios_base::binary);
+
+  newFile.write(data, dataSize);
+
+  std::cout << "File successfully copied in " << storagePath << std::endl;
+  newFile.close();
 }
