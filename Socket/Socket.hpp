@@ -40,6 +40,8 @@ public:
   Packet receivePacket(int fd);
   Packet managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type);
   Packet connectSocket(char *dataBuffer, uint64_t dataSize, std::string userName);
+  Packet maskData(char *dataBuffer, uint64_t dataSize, std::string userName);
+  void createFileFromPacket(char *data, ssize_t dataSize, std::string userName);
 
   int getSocketFd() { return socketFd; }
   std::string getMessage() { return message; }

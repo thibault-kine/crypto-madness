@@ -10,6 +10,9 @@
 #include <mutex>
 #include <vector>
 #include <algorithm>
+#include <random>
+
+
 
 std::string getServerAddress() {
   struct ifaddrs *ifAddrStruct = NULL;
@@ -58,6 +61,32 @@ void broadcastMessage(const Packet &packet, int senderFd, Socket &server, std::v
   }
 }
 
+char *generateMaskFile(std::string username) {
+  std::string filename = "Server/masks/mask_" + username + ".bin";
+  std::remove(filename.c_str());
+  char *mask = new char[1000000];
+
+  // Ouvrir le fichier en mode binaire
+  std::ofstream file(filename, std::ios::binary);
+  if (!file) {
+    std::cerr << "Error: could not create mask file" << std::endl;
+    exit(1);
+  }
+
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(0x20, 0x7E);  // Distribution entre 0x00 et 0xFF (valeurs hexadécimales)
+
+  for (int i = 0; i < 1000000; i++) {
+    uint8_t byte = dis(gen);  // Générer un octet aléatoire (8 bits)
+    file.write(reinterpret_cast<char*>(&byte), sizeof(byte));  // Écrire l'octet dans le fichier
+    mask[i] = byte;
+  }
+
+  file.close();
+  return mask;
+}
+
 int handleClient(int clientFd, Socket &server, std::vector<int> &clients, std::mutex &clientsMutex) {
   if (clientFd == -1) {
     return 1;
@@ -72,13 +101,18 @@ int handleClient(int clientFd, Socket &server, std::vector<int> &clients, std::m
   // Connexion
   Packet sent = server.receivePacket(clientFd);
   server.sendPacket(clientFd, sent);
-  // Requete
+  // Requete mdp
   sent = server.receivePacket(clientFd);
   server.sendPacket(clientFd, sent);
 
   if (sent.getDataStr() == std::string("Connexion refusé")) {
     return 1;
   }
+  Packet mask= Packet(MASK, generateMaskFile(sent.getUserNameStr()), sent.getUserNameStr().c_str());
+  // envoie mask
+  sent = server.receivePacket(clientFd);
+  server.sendPacket(clientFd, mask);
+  
   while (true) {
     sent = server.receivePacket(clientFd);    
     if (sent.getPacketType() == PacketType::NONE

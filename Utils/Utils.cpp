@@ -22,6 +22,7 @@ std::vector<std::string> split(std::string &s, const std::string &delimiter) {
   return tokens;
 }
 
+
 void addUser(std::string username, std::string password) {
   std::ofstream file;
   if(!fs::exists("Server/actually_safe_this_time.txt")) {

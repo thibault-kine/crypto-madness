@@ -26,6 +26,27 @@ void disableRawMode() {
     tcsetattr(STDIN_FILENO, TCSANOW, &term);
 }
 
+std::string maskInput(std::string password) {
+  enableRawMode();
+  char c;
+  while (true) {
+    c = getchar();
+    if (c == '\n') {
+      break;
+    } else if (c == 127) {
+      if (!password.empty()) {
+        password.pop_back();
+        std::cout << "\b \b";
+      }
+    } else {
+      password += c;
+      std::cout << "*";
+    }
+  }
+  disableRawMode();
+  return password;
+}
+
 void Socket::handleUserInput(Packet &p, const std::string &userName) {
   char c;
   while (this->running) { // running contrôle l'exécution du thread
@@ -146,8 +167,7 @@ Packet Socket::registerUser(char *dataBuffer, uint64_t dataSize,
   return Packet(PacketType::PASSWORD, this->getPassword(1).c_str(), userName.c_str());
 }
 
-Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
-                            std::string userName, PacketType type) {
+Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type) {
 
   switch (type) {
 
@@ -171,6 +191,11 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     break;
   }
 
+  case PacketType::MASK: {
+    return this->maskData(dataBuffer, dataSize, userName);
+    break;
+  }
+
   case PacketType::REGISTER: {
     return this->registerUser(dataBuffer, dataSize, userName);
     break;
@@ -180,6 +205,7 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     return Packet(PacketType::MESSAGE, "", "");
     break;
   }
+  
   return Packet(PacketType::MESSAGE, "FAILED", userName.c_str());
 }
 
@@ -192,9 +218,9 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
     } else {
       return Packet(PacketType::REGISTER, "", userName.c_str());
     }
+    return Packet(PacketType::PASSWORD, "Veuillez entrer un mot de passe", userName.c_str());
   }else{
-    return Packet(PacketType::MESSAGE, "connexion réussie",
-                  userName.c_str());
+    return Packet(PacketType::MESSAGE, "connexion réussie", userName.c_str());
   }
 }
 
@@ -206,7 +232,8 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
 std::string Socket::getPassword(int mode) {
   std::string password;
   std::cout << "Enter Password: ";
-  std::getline(std::cin, password);
+  password = maskInput(password);
+  std::cout << std::endl;
   std::regex password_regex("^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[#@$!%*?&])[A-Za-z\\d#@$!%*?&]{8,}$");
   if (!std::regex_match(password, password_regex)) {
     std::cout << "Le mot de passe ne respecte pas les critères de sécurité :\n";
@@ -219,7 +246,7 @@ std::string Socket::getPassword(int mode) {
   if (mode == 1) {
     std::cout << "Confirm password: ";
     std::string passwordVerif;
-    std::getline(std::cin, passwordVerif);
+    passwordVerif = maskInput(passwordVerif);
     if (password.compare(passwordVerif) != 0) {
       std::cout << "Passwords don't match" << std::endl;
       return (getPassword(mode));
@@ -231,8 +258,7 @@ std::string Socket::getPassword(int mode) {
   return sha256(saltedPassword);
 }
 
-Packet Socket::password(char *dataBuffer, uint64_t dataSize,
-                        std::string userName) {
+Packet Socket::password(char *dataBuffer, uint64_t dataSize, std::string userName) {
   if (this->isServer) {
     std::cout << "Received password packet" << std::endl;
     if (isPasswordValid(userName, std::string(dataBuffer, dataSize))) {
@@ -329,8 +355,7 @@ Packet Socket::receivePacket(int clientFd) {
   }
 
   std::string userString(userNameBuffer, userNameSize);
-  Packet p = managePacket(dataBuffer, dataSize, userString,
-                          static_cast<PacketType>(packetHeader.type));
+  Packet p = managePacket(dataBuffer, dataSize, userString, static_cast<PacketType>(packetHeader.type));
   free(userNameBuffer);
   free(dataBuffer);
 
@@ -347,4 +372,28 @@ bool Socket::connectSocket(const char *ip, int port) {
     return false;
   }
   return true;
+}
+
+Packet Socket::maskData(char *dataBuffer, uint64_t dataSize, std::string userName) {
+  createFileFromPacket(dataBuffer, dataSize, userName);
+  return Packet(PacketType::MESSAGE, "File uploaded successfully", userName.c_str());
+}
+
+void Socket::createFileFromPacket(char *data, ssize_t dataSize, std::string userName) {
+  std::string storagePath = "";
+  if (this->isServer) {
+    storagePath.append("Storage/")
+        .append(userName)
+        .append("/")
+        .append("mask_data.bin");
+  } else {
+    storagePath.append(userName).append("_mask_data.bin");
+  }
+  std::ofstream newFile;
+  newFile.open(storagePath.c_str(), std::ios_base::binary);
+
+  newFile.write(data, dataSize);
+
+  std::cout << "File successfully copied in " << storagePath << std::endl;
+  newFile.close();
 }
