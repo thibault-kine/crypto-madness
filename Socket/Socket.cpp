@@ -186,7 +186,24 @@ Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,
 std::string Socket::getPassword() {
   std::string password;
   std::cout << "Enter Password: ";
-  std::getline(std::cin, password);
+  enableRawMode();
+  char c;
+  while (true) {
+    c = getchar();
+    if (c == '\n') {
+      break;
+    } else if (c == 127) {
+      if (!password.empty()) {
+        password.pop_back();
+        std::cout << "\b \b";
+      }
+    } else {
+      password += c;
+      std::cout << "*";
+    }
+  }
+  disableRawMode();
+  std::cout << std::endl;
   return password;
 }
 
