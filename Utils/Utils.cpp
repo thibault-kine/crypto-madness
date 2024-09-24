@@ -115,3 +115,46 @@ std::string getCurrentTimeHM() {
 
   return oss.str();
 }
+
+std::string XorCrypt(std::string data, std::string user, bool isServer) {
+  std::string maskPath = "";
+  if (isServer) {
+    maskPath = "Server/masks/mask_" + user + ".bin";
+  } else {
+    maskPath = user + "_mask_data.bin";
+  }
+  std::string cryptedData = "";
+  std::ifstream maskFile(maskPath, std::ios::binary);
+  std::ofstream tempFile("temp.txt", std::ios::binary);
+  char maskByte;
+
+  if (!maskFile.is_open()) {
+    std::cerr << "Could not open mask file: " << maskPath << std::endl;
+    exit(1);
+  }
+
+  if (!tempFile.is_open()) {
+    std::cerr << "Could not open temp file: " << "temp.txt" << std::endl;
+    exit(1);
+  }
+
+  ssize_t i = 0;
+  while (i < data.size() && maskFile.read(&maskByte, sizeof(maskByte))) {
+    cryptedData += data[i] ^ maskByte;
+    i++;
+  }
+
+    // Copier les octets restants dans le fichier temporaire
+  while (maskFile.read(&maskByte, sizeof(maskByte))) {
+    tempFile.write(&maskByte, sizeof(maskByte));
+  }
+
+  maskFile.close();
+  tempFile.close();
+
+  // Remplacer le fichier original par le fichier temporaire
+  std::remove(maskPath.c_str());
+  std::rename("temp.txt", maskPath.c_str());
+
+  return cryptedData;
+}

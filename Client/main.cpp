@@ -37,7 +37,7 @@ std::vector<std::string> splitIdentification(char *ipPortString) {
 }
 
 int startClient(const std::string &ip, int port, Packet &p) {
-  Socket client;
+  Socket client(p.getUserNameStr());
   if (!client.createSocket()) {
     std::cerr << "Error creating socket" << std::endl;
     return 1;

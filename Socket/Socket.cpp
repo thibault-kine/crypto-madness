@@ -1,5 +1,6 @@
 #include "Socket.hpp"
 #include "../Utils/Logger.hpp"
+#include "../Utils/Utils.hpp"
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
@@ -51,6 +52,7 @@ void Socket::handleUserInput(Packet &p, const std::string &userName) {
       }
       std::cout << "\033[2K\r";
       std::cout<< getCurrentTimeHM() << " - You: "<< message << std::endl << std::flush;
+      message = XorCrypt(message, userName, false);
       p.setDataFromStr(message.c_str(), userName.c_str());
       this->sendPacket(this->getSocketFd(), p); // Envoyer le message
   }
@@ -136,32 +138,40 @@ uint64_t fromBigEndian(const std::vector<uint8_t> bytes, size_t offset,
   return value;
 }
 
-Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string userName, PacketType type) {
+Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string postUserName, PacketType type) {
 
   switch (type) {
 
   case PacketType::MESSAGE: {
-    Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
+    std::string message(dataBuffer, dataSize);
+    Packet p = Packet(PacketType::MESSAGE, message.c_str(), postUserName.c_str());
+    if (message != "Connexion accepté" && message != "Connexion refusé") {
+      std::cout <<"WEWE" <<this->username << ": ";
+      message = XorCrypt(message, isServer ? postUserName : this->username, this->isServer);
+      p.setDataFromStr(message.c_str(), postUserName.c_str());
+    }
     std::cout << "\033[2K\r" << std::flush;
-    std::cout << getCurrentTimeHM() << " - " << userName << ": ";
+    std::cout << getCurrentTimeHM() << " - " << postUserName << ": ";
     p.printData();
-    std::cout << "You: "<< this->message << std::flush;
+    if (!this->IsServer()) {    
+      std::cout << "You: "<< this->message << std::flush;
+    }
     return p;
     break;
   }
 
   case PacketType::PASSWORD: {
-    return this->password(dataBuffer, dataSize, userName);
+    return this->password(dataBuffer, dataSize, postUserName);
     break;
   }
 
   case PacketType::CONNECT: {
-    return this->acceptClient(dataBuffer, dataSize, userName);
+    return this->acceptClient(dataBuffer, dataSize, postUserName);
     break;
   }
 
   case PacketType::MASK: {
-    return this->maskData(dataBuffer, dataSize, userName);
+    return this->maskData(dataBuffer, dataSize, postUserName);
     break;
   }
 
@@ -170,7 +180,7 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string use
     break;
   }
   
-  return Packet(PacketType::MESSAGE, "FAILED", userName.c_str());
+  return Packet(PacketType::MESSAGE, "FAILED", postUserName.c_str());
 }
 
 Packet Socket::acceptClient(char *dataBuffer, uint64_t dataSize,

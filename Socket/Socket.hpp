@@ -15,6 +15,7 @@ private:
   struct sockaddr_in address;
   bool isServer = false;
   bool running = true;
+  std::string username;
   std::string message;
 
   Packet acceptClient(char *dataBuffer, uint64_t dataSize,
@@ -24,7 +25,7 @@ private:
 
 public:
   // Constructeur par défaut
-  Socket() : socketFd(0), running(true) { memset(&address, 0, sizeof(address)); }
+  Socket(std::string username) : socketFd(0), running(true), username(username) { memset(&address, 0, sizeof(address)); }
   
   ~Socket() { closeSocket(); }
 
@@ -42,6 +43,8 @@ public:
   Packet maskData(char *dataBuffer, uint64_t dataSize, std::string userName);
   void createFileFromPacket(char *data, ssize_t dataSize, std::string userName);
 
+  std::string getUsername() { return username; }
+  void setUsername(std::string username) { this->username = username; }
   int getSocketFd() { return socketFd; }
   std::string getMessage() { return message; }
   struct sockaddr_in getAddress() { return address; }
