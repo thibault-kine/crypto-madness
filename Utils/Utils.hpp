@@ -31,3 +31,5 @@ inline std::string trim(std::string &s);
 std::string getCurrentTimeHMS();
 
 std::string getCurrentTimeHM();
+
+std::string encryptXor(std::string data, std::string user, bool isServer);

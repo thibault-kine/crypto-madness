@@ -52,4 +52,5 @@ public:
   void setSocketFd(int socketFd) { this->socketFd = socketFd; }
   void setAddress(struct sockaddr_in address) { this->address = address; }
   void setIsServer(bool value) { this->isServer = value; }
+
 };

@@ -1,4 +1,5 @@
 #include "Packet.hpp"
+#include "../Socket/Socket.hpp"
 #include "../Utils/Utils.hpp"
 #include <fstream>
 #include <iomanip>
@@ -76,8 +77,9 @@ void Packet::setDataFromStr(const char *str, const char *user) {
   dataSize = data.size();
 }
 
-void Packet::printData() {
+void Packet::printData(std::string userName, bool isServer) {
   std::string dataStr(this->data.begin(), this->data.end());
+  encryptXor(dataStr, userName, isServer);
   std::cout << dataStr.c_str() << std::endl;
   std::cout.flush();
 }

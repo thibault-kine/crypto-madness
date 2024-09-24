@@ -47,7 +47,7 @@ public:
   void setData(const std::vector<uint8_t> data) { this->data = data; }
   void setDataFromStr(const char *str, const char *user);
 
-  void printData();
+  void printData(std::string userName, bool isServer);
 
   static std::string packetTypeToString(PacketType pt);
 };

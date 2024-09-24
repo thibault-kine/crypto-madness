@@ -45,12 +45,13 @@ void Socket::handleUserInput(Packet &p, const std::string &userName) {
             std::cout << c;
         }
       }
-        disableRawMode();  // Rétablir le mode normal
+      disableRawMode();  // Rétablir le mode normal
       if (message.empty()) {
           continue; // Ignorer les messages vides
       }
       std::cout << "\033[2K\r";
       std::cout<< getCurrentTimeHM() << " - You: "<< message << std::endl << std::flush;
+      message = encryptXor(message, userName, this->isServer);
       p.setDataFromStr(message.c_str(), userName.c_str());
       this->sendPacket(this->getSocketFd(), p); // Envoyer le message
   }
@@ -107,8 +108,10 @@ bool Socket::closeSocket() {
 
 bool Socket::sendPacket(int clientFd, Packet message) {
   std::vector<uint8_t> packet = message.toBytes();
+  if (!this->isServer) {  
   std::cout << "\033[2K\r" << std::flush;
   std::cout << getCurrentTimeHM() << " - You: "<< this->message << std::flush;
+  }
   int packetSize = packet.size(); // Size includes header size
   ssize_t totalSent = 0;
   while (totalSent < packetSize) {
@@ -144,8 +147,10 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize, std::string use
     Packet p = Packet(PacketType::MESSAGE, std::string(dataBuffer, dataSize).c_str(), userName.c_str());
     std::cout << "\033[2K\r" << std::flush;
     std::cout << getCurrentTimeHM() << " - " << userName << ": ";
-    p.printData();
-    std::cout << "You: "<< this->message << std::flush;
+    p.printData(userName, this->isServer);
+    if (!this->isServer) {
+      std::cout << "You: "<< this->message << std::flush;
+    }
     return p;
     break;
   }
@@ -319,6 +324,7 @@ void Socket::createFileFromPacket(char *data, ssize_t dataSize, std::string user
         .append("/")
         .append("mask_data.bin");
   } else {
+    std::cout << "mabite" << std::endl;
     storagePath.append(userName).append("_mask_data.bin");
   }
   std::ofstream newFile;
@@ -326,6 +332,5 @@ void Socket::createFileFromPacket(char *data, ssize_t dataSize, std::string user
 
   newFile.write(data, dataSize);
 
-  std::cout << "File successfully copied in " << storagePath << std::endl;
   newFile.close();
 }

@@ -68,10 +68,6 @@ char *generateMaskFile(std::string username) {
 
   // Ouvrir le fichier en mode binaire
   std::ofstream file(filename, std::ios::binary);
-  if (!file) {
-    std::cerr << "Error: could not create mask file" << std::endl;
-    exit(1);
-  }
 
   std::random_device rd;
   std::mt19937 gen(rd());
