@@ -35,4 +35,13 @@ std::string getCurrentTimeHMS();
 std::string getCurrentTimeHM();
 
 std::string XorCrypt(std::string data, std::string user, bool isServer);
+std::string XorDecrypt(std::string base64Data, std::string user, bool isServer);
+
 std::string generateRandomString(int length);
+
+std::string sha256(const std::string str);
+
+std::string base64Encode(const std::string &decodedData);
+
+std::string base64Decode(const std::string &encodedData);
+

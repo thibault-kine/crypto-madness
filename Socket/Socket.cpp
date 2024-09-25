@@ -158,7 +158,7 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     Packet p = Packet(PacketType::MESSAGE, message.c_str(), postUserName.c_str());
     if (message != "Connexion accepté" && message != "Connexion refusé") {
       std::cout <<"WEWE" <<this->username << ": ";
-      message = XorCrypt(message, isServer ? postUserName : this->username, this->isServer);
+      message = XorDecrypt(message, isServer ? postUserName : this->username, this->isServer);
       p.setDataFromStr(message.c_str(), postUserName.c_str());
     }
     std::cout << "\033[2K\r" << std::flush;

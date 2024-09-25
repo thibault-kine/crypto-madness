@@ -4,8 +4,48 @@
 #include <filesystem>
 #include <string.h>
 #include <stdio.h>
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <openssl/evp.h>
 
 namespace fs = std::filesystem;
+
+// Fonction pour encoder en Base64
+std::string base64Encode(const std::string &data) {
+    BIO *bio, *b64;
+    BUF_MEM *bufferPtr;
+
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_new(BIO_s_mem());
+    bio = BIO_push(b64, bio);
+
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL); // Pas de nouvelle ligne à la fin
+    BIO_write(bio, data.c_str(), data.length());
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bufferPtr);
+
+    std::string encodedData(bufferPtr->data, bufferPtr->length);
+    BIO_free_all(bio);
+
+    return encodedData;
+}
+
+// Fonction pour décoder du Base64
+std::string base64Decode(const std::string &encodedData) {
+    BIO *bio, *b64;
+    char buffer[encodedData.length()];
+    memset(buffer, 0, sizeof(buffer));
+
+    bio = BIO_new_mem_buf(encodedData.c_str(), -1);
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_push(b64, bio);
+
+    BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+    int decodedLength = BIO_read(bio, buffer, encodedData.length());
+    BIO_free_all(bio);
+
+    return std::string(buffer, decodedLength);
+}
 
 
 std::vector<std::string> split(std::string &s, const std::string &delimiter) {
@@ -154,7 +194,7 @@ std::string getCurrentTimeHM() {
 }
 
 std::string XorCrypt(std::string data, std::string user, bool isServer) {
-  std::string maskPath = "";
+     std::string maskPath = "";
   if (isServer) {
     maskPath = "Server/masks/mask_" + user + ".bin";
   } else {
@@ -175,26 +215,73 @@ std::string XorCrypt(std::string data, std::string user, bool isServer) {
     exit(1);
   }
 
-  ssize_t i = 0;
-  while (i < data.size() && maskFile.read(&maskByte, sizeof(maskByte))) {
-    cryptedData += data[i] ^ maskByte;
-    i++;
-  }
+    ssize_t i = 0;
+    std::string encryptedBytes;
+    while (i < data.size() && maskFile.read(&maskByte, sizeof(maskByte))) {
+        char cryptedChar = data[i] ^ maskByte;
+        encryptedBytes.push_back(cryptedChar);
+        i++;
+    }
 
     // Copier les octets restants dans le fichier temporaire
-  while (maskFile.read(&maskByte, sizeof(maskByte))) {
-    tempFile.write(&maskByte, sizeof(maskByte));
+    while (maskFile.read(&maskByte, sizeof(maskByte))) {
+        tempFile.write(&maskByte, sizeof(maskByte));
+    }
+
+    maskFile.close();
+    tempFile.close();
+
+    // Remplacer le fichier original par le fichier temporaire
+    std::remove(maskPath.c_str());
+    std::rename("temp.txt", maskPath.c_str());
+
+    // Encoder le résultat en Base64 pour obtenir une chaîne imprimable
+    cryptedData = base64Encode(encryptedBytes);
+
+    return cryptedData;
+}
+
+std::string XorDecrypt(std::string base64Data, std::string user, bool isServer) {
+    std::string maskPath = isServer ? "Server/masks/mask_" + user + ".bin" : user + "_mask_data.bin";
+    std::string decryptedData = "";
+    std::ifstream maskFile(maskPath, std::ios::binary);
+    std::ofstream tempFile("temp.txt", std::ios::binary);
+    char maskByte;
+
+    if (!maskFile.is_open()) {
+        std::cerr << "Could not open mask file: " << maskPath << std::endl;
+        exit(1);
+    }
+
+    if (!tempFile.is_open()) {
+    std::cerr << "Could not open temp file: " << "temp.txt" << std::endl;
+    exit(1);
   }
 
-  maskFile.close();
-  tempFile.close();
+    // Décoder la chaîne Base64
+    std::string encryptedBytes = base64Decode(base64Data);
 
-  // Remplacer le fichier original par le fichier temporaire
-  std::remove(maskPath.c_str());
-  std::rename("temp.txt", maskPath.c_str());
+    ssize_t i = 0;
+    while (i < encryptedBytes.size() && maskFile.read(&maskByte, sizeof(maskByte))) {
+        char decryptedChar = encryptedBytes[i] ^ maskByte;
+        decryptedData.push_back(decryptedChar);
+        i++;
+    }
+    // Copier les octets restants dans le fichier temporaire
+    while (maskFile.read(&maskByte, sizeof(maskByte))) {
+        tempFile.write(&maskByte, sizeof(maskByte));
+    }
 
-  return cryptedData;
+    maskFile.close();
+    tempFile.close();
+
+    // Remplacer le fichier original par le fichier temporaire
+    std::remove(maskPath.c_str());
+    std::rename("temp.txt", maskPath.c_str());
+    
+    return decryptedData;
 }
+
 
 std::string generateRandomString(int length) {
     char alphanum[] = 
