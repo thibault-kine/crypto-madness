@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <string.h>
 #include <stdio.h>
+#include <argon2.h>
 
 namespace fs = std::filesystem;
 

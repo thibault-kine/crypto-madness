@@ -8,6 +8,7 @@
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <filesystem>
 
 class Socket {
 private:
@@ -17,6 +18,7 @@ private:
   bool running = true;
   std::string username;
   std::string message;
+  std::string salt;
 
   Packet acceptClient(char *dataBuffer, uint64_t dataSize,
                       std::string userName);
@@ -52,6 +54,7 @@ public:
   bool IsServer() { return isServer; }
 
   void handleUserInput(Packet &p, const std::string &userName);
+  void generateKey(std::string userName, std::string password, uint8_t* key, size_t keyLength);
 
   void setSocketFd(int socketFd) { this->socketFd = socketFd; }
   void setAddress(struct sockaddr_in address) { this->address = address; }

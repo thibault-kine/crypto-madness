@@ -21,10 +21,10 @@ OBJ_CLIENT = $(SRC_CLIENT:.cpp=.o)
 all: $(NAME_SERVER) $(NAME_CLIENT)
 
 $(NAME_SERVER): $(OBJ_SERVER)
-	$(CC) $(CFLAGS) -o ./$(NAME_SERVER) $(OBJ_SERVER) -lcrypto
+	$(CC) $(CFLAGS) -o ./$(NAME_SERVER) $(OBJ_SERVER) -lcrypto -largon2
 
 $(NAME_CLIENT): $(OBJ_CLIENT)
-	$(CC) $(CFLAGS) -o ./$(NAME_CLIENT) $(OBJ_CLIENT) -lcrypto
+	$(CC) $(CFLAGS) -o ./$(NAME_CLIENT) $(OBJ_CLIENT) -lcrypto -largon2
 
 clean:
 	rm -f $(OBJ_SERVER) $(OBJ_CLIENT)

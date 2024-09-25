@@ -35,4 +35,6 @@ std::string getCurrentTimeHMS();
 std::string getCurrentTimeHM();
 
 std::string XorCrypt(std::string data, std::string user, bool isServer);
+
 std::string generateRandomString(int length);
+

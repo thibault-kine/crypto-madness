@@ -5,8 +5,10 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <sstream>
 #include <unistd.h>
 #include <termios.h>
+#include <argon2.h>
 #include <regex>
 
 namespace fs = std::filesystem;
@@ -157,7 +159,6 @@ Packet Socket::managePacket(char *dataBuffer, uint64_t dataSize,
     std::string message(dataBuffer, dataSize);
     Packet p = Packet(PacketType::MESSAGE, message.c_str(), postUserName.c_str());
     if (message != "Connexion accepté" && message != "Connexion refusé") {
-      std::cout <<"WEWE" <<this->username << ": ";
       message = XorCrypt(message, isServer ? postUserName : this->username, this->isServer);
       p.setDataFromStr(message.c_str(), postUserName.c_str());
     }
@@ -241,7 +242,14 @@ std::string Socket::getPassword(int mode) {
     }
   }
 
-  std::string saltedPassword = generateRandomString(12).append(password);
+  // On initialize le salt à la création du compte
+  this->salt = generateRandomString(12);
+
+  // Et ensuite on génère la clé
+  uint8_t key[16];
+  generateKey(username, password, key, sizeof(key));
+
+  std::string saltedPassword = salt.append(password);
 
   return sha256(saltedPassword);
 }
@@ -384,4 +392,56 @@ void Socket::createFileFromPacket(char *data, ssize_t dataSize, std::string user
 
   std::cout << "File successfully copied in " << storagePath << std::endl;
   newFile.close();
+}
+
+void Socket::generateKey(std::string userName, std::string password, uint8_t* key, size_t keyLength) {
+
+    std::ofstream serverFile;
+    if(!fs::exists("Server/user_keys_do_not_steal_plz.txt")) {
+        std::ofstream file("Server/user_keys_do_not_steal_plz.txt");
+        file.close();
+    }
+    serverFile.open("Server/user_keys_do_not_steal_plz.txt", std::ios_base::app);
+    if (!serverFile.is_open()) {
+        std::cout << "Could not open file" << std::endl;
+        exit(1);
+    }
+
+    std::ofstream clientFile;
+    std::string clientFileName = userName + "_key.txt";
+    if(!fs::exists(clientFileName.c_str())) {
+        std::ofstream file(clientFileName.c_str());
+        file.close();
+    }
+    clientFile.open(clientFileName.c_str(), std::ios_base::app);
+    if (!serverFile.is_open()) {
+        std::cout << "Could not open file" << std::endl;
+        exit(1);
+    }
+
+    uint32_t cost = 2; // nb d'itérations
+    uint32_t mem = (1 << 16); // cout en mémoire
+    uint32_t version = ARGON2_VERSION_13; // numéro de version
+
+    int result = argon2i_hash_raw(
+        cost, mem, 1,
+        message.data(), message.size(),
+        salt.data(), salt.size(),
+        key, keyLength
+    );
+    
+    if(result != ARGON2_OK) {
+        std::cerr << "Error while generating key : " << argon2_error_message(result) << std::endl;
+    }
+
+    std::ostringstream oss;
+    for(size_t i = 0; i < keyLength; i++) {
+        oss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(key[i]);
+    }
+
+    serverFile << userName << ":" << oss.str() << std::endl;
+    serverFile.close();
+
+    clientFile << oss.str() << std::endl;
+    clientFile.close();
 }
