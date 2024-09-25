@@ -11,6 +11,8 @@ enum PacketType : uint8_t {
   PASSWORD,
   CONNECT,
   MASK,
+  LOGIN,
+  REGISTER,
   ERROR
 };
 

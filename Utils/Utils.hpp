@@ -18,6 +18,8 @@ std::vector<std::string> split(std::string &s, const std::string &delimiter);
 
 void addUser(std::string username);
 
+bool isUserExisting(std::string username);
+
 bool isPasswordValid(std::string username, std::string password);
 
 // trim from start (in place)
@@ -33,3 +35,4 @@ std::string getCurrentTimeHMS();
 std::string getCurrentTimeHM();
 
 std::string XorCrypt(std::string data, std::string user, bool isServer);
+std::string generateRandomString(int length);

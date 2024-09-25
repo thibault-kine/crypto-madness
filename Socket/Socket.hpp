@@ -20,8 +20,9 @@ private:
 
   Packet acceptClient(char *dataBuffer, uint64_t dataSize,
                       std::string userName);
+  Packet registerUser(char *dataBuffer, uint64_t dataSize, std::string userName);
   Packet password(char *dataBuffer, uint64_t dataSize, std::string userName);
-  std::string getPassword();
+  std::string getPassword(int mode);
 
 public:
   // Constructeur par défaut
